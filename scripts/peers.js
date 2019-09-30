@@ -6,14 +6,6 @@ var mongoose = require('mongoose')
 
 var COUNT = 5000; //number of blocks to index
 
-function maskips (splitaddy) {
-  var ip = splitaddy;
-  var breakip = ip.split('.');
-  var masked = breakip[0] + '.' + breakip[1] + '.' + 'XXX' + '.' + 'XXX';
-//  console.log(breakip[0] + '.' + breakip[1] + '.' + 'XXX' + '.' + 'XXX');
-  return masked;
-}
-
 function trim(s, mask) {
 while (~mask.indexOf(s[0])) {
  s = s.slice(1);
@@ -45,15 +37,14 @@ mongoose.connect(dbString, function(err) {
       lib.syncLoop(body.length, function (loop) {
         var i = loop.iteration();
         var address = trim(body[i].addr.substring(0, body[i].addr.lastIndexOf(":")), "[]");
-	var maskedaddy = maskips(address);
-        db.find_peer(maskedaddy, function(peer) {
+        db.find_peer(address, function(peer) {
           if (peer) {
             // peer already exists
             loop.next();
           } else {
             request({uri: 'http://ip-api.com/json/' + address, json: true}, function (error, response, geo) {
               db.create_peer({
-                address: maskedaddy,
+                address: address,
                 protocol: body[i].version,
                 version: body[i].subver.replace('/', '').replace('/', ''),
                 country: geo.country,
